@@ -1,31 +1,31 @@
 {
   "date": "2026-06-09",
-  "sp500_direction": "UP +0.5% to +1.3% if May CPI ≤ 3.5% YoY — DOWN -0.8% to -1.5% if CPI ≥ 3.9%. May CPI prints June 10 at 8:30am ET and is the dominant catalyst.",
+  "sp500_direction": "UP +1.0% to +1.8% if May CPI \u2264 3.5% YoY / DOWN -1.2% to -2.0% if CPI \u2265 3.9% \u2014 Wednesday's 8:30 AM ET CPI print is the sole dominant catalyst with Fed rate-hike odds at 72%, making this a binary-outcome day for equities.",
   "stock_picks": [
+    {
+      "ticker": "ORCL",
+      "direction": "LONG",
+      "thesis": "Oracle reports earnings Wednesday evening; AI infrastructure sentiment is running hot and a cloud/AI revenue beat could trigger a gap-up as the market looks for the next post-Broadcom data center spending confirmation."
+    },
     {
       "ticker": "MRVL",
       "direction": "LONG",
-      "thesis": "S&P 500 inclusion effective June 22 creates two weeks of forced mechanical buying from index funds — high-conviction near-term trade."
+      "thesis": "With S&P 500 inclusion effective June 22, passive index funds must mechanically accumulate MRVL shares over the next two weeks, making every pullback a high-probability buying opportunity driven by forced demand."
     },
     {
-      "ticker": "INTC",
+      "ticker": "TLT",
       "direction": "LONG",
-      "thesis": "Alphabet foundry deal is a narrative-shifting catalyst for a heavily shorted stock; potential short-squeeze on top of sector recovery momentum."
+      "thesis": "A CPI print at or below consensus 3.5% would trigger a sharp relief rally in long-duration Treasuries as rate-hike expectations compress rapidly, offering asymmetric upside for TLT holders going into the print."
     },
     {
-      "ticker": "GLW",
+      "ticker": "SOXX",
       "direction": "LONG",
-      "thesis": "Amazon AI data center fiber deal may be underappreciated; picks-and-shovels AI infrastructure play without chip-stock volatility."
+      "thesis": "The semiconductor sector's structural AI tailwind remains intact with 61% quarterly outperformance vs. the S&P 500, and two volatile days of selling have created an attractive re-entry point for a CPI-driven bounce in the SOXX ETF."
     },
     {
-      "ticker": "MU",
-      "direction": "LONG",
-      "thesis": "Semiconductor sector recovery trade; structurally bullish HBM demand from AI training and a cool CPI would send it notably higher."
-    },
-    {
-      "ticker": "BRC",
-      "direction": "LONG",
-      "thesis": "Down 15% on CEO transition the market is likely overreacting to; oversold bounce candidate in the 1-3 day timeframe with asymmetric risk/reward."
+      "ticker": "XLE",
+      "direction": "SHORT",
+      "thesis": "Iran's stated end to its military operation against Israel and Trump's diplomatic optimism signal a potential unwinding of the geopolitical oil risk premium, making the energy ETF a short candidate as crude prices normalize toward pre-escalation levels."
     }
   ]
 }
