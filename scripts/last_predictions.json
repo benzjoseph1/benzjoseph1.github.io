@@ -1,0 +1,13 @@
+{
+  "date": "June 9, 2026",
+  "sp500_direction": "UP ~0.2% to +0.5% — base case; HIGH RISK if May CPI (8:30 AM ET) prints hot",
+  "sp500_rationale": "Chip momentum (INTC/MRVL/AMD) carries forward; Iran tensions partially priced in; SpaceX IPO hype building. Downside risk: hot CPI print triggers rate-cut repricing and tech selloff.",
+  "stock_picks": ["INTC", "MRVL", "XOM", "AMD", "OSCR"],
+  "stock_pick_rationales": {
+    "INTC": "Long — Google 3M+ TPU manufacturing order still digesting; analyst upgrades likely incoming",
+    "MRVL": "Long — S&P 500 index inclusion = forced passive fund buying incoming",
+    "XOM": "Long — Iran/oil trade; energy sector +22% YTD leadership; geopolitical risk premium elevated",
+    "AMD": "Long — Chip sector recovery play; Intel Google news validates AI chip demand broadly",
+    "OSCR": "Swing long — Wells Fargo PT doubled to $20; Goldman conference reaffirmation; healthcare defensive rotation"
+  }
+}
