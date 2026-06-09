@@ -1,10 +1,10 @@
 name: Daily Market Briefing
 
 on:
-  # 4pm PDT (UTC-7) = 23:00 UTC — covers summer months
-  # In winter (PST, UTC-8), this fires at 3pm PST, which is still after 4pm ET market close
+  # 4:10pm PDT (UTC-7) = 23:10 UTC — gives the market a 10-min buffer after 4pm ET close
+  # In winter (PST, UTC-8), this fires at 3:10pm PST, still well after 4pm ET market close
   schedule:
-    - cron: "0 23 * * 1-5"
+    - cron: "10 23 * * 1-5"
 
   # Allow manual trigger from the GitHub Actions tab for testing
   workflow_dispatch:
