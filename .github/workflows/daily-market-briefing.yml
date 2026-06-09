@@ -1,22 +1,27 @@
 name: Daily Market Briefing
 
 on:
-  # 4pm PST = 23:00 UTC (during PDT/summer, UTC-7)
-  # Runs Mon-Fri at market close
+  # 4pm PDT (UTC-7) = 23:00 UTC — covers summer months
+  # In winter (PST, UTC-8), this fires at 3pm PST, which is still after 4pm ET market close
   schedule:
     - cron: "0 23 * * 1-5"
 
-  # Allow manual trigger from GitHub Actions tab
+  # Allow manual trigger from the GitHub Actions tab for testing
   workflow_dispatch:
+
+permissions:
+  contents: write  # required to commit last_predictions.json back to the repo
 
 jobs:
   send-briefing:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -24,9 +29,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install anthropic
+        run: pip install "anthropic>=0.40.0"
 
-      - name: Run market briefing
+      - name: Generate and send briefing
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}

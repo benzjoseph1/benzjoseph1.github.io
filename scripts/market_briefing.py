@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
 Daily Market Briefing Generator
-Runs at 4pm PST (Mon-Fri) via GitHub Actions.
-Generates a stock market + business news briefing using Claude + web search,
-then emails it via Gmail SMTP.
+Runs at ~4pm PST weekdays via GitHub Actions.
+Uses Claude + Anthropic web_search to gather market data, then emails via Gmail SMTP.
 """
 
-import os
-import smtplib
 import json
+import os
 import re
-from datetime import date, datetime, timedelta
+import smtplib
+from datetime import date, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -21,9 +20,15 @@ SENDER_EMAIL = os.environ["GMAIL_USERNAME"]
 GMAIL_APP_PASSWORD = os.environ["GMAIL_APP_PASSWORD"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
-# Path to persist yesterday's predictions for grading
 PREDICTIONS_FILE = os.path.join(os.path.dirname(__file__), "last_predictions.json")
 
+# Model to use — sonnet is faster and cheaper for this daily task
+MODEL = "claude-sonnet-4-6"
+
+
+# ---------------------------------------------------------------------------
+# Predictions persistence
+# ---------------------------------------------------------------------------
 
 def load_last_predictions() -> dict:
     if os.path.exists(PREDICTIONS_FILE):
@@ -37,149 +42,240 @@ def save_predictions(predictions: dict):
         json.dump(predictions, f, indent=2)
 
 
-def generate_briefing(today_str: str, last_preds: dict) -> tuple[str, str, dict]:
+# ---------------------------------------------------------------------------
+# Briefing generation via Claude + web search
+# ---------------------------------------------------------------------------
+
+def call_claude(client: anthropic.Anthropic, system: str, messages: list) -> str:
     """
-    Uses Claude with web_search to generate the full briefing.
-    Returns (html_body, plain_text_body, new_predictions_dict).
+    Run a Claude inference loop, handling the web_search_20250305 tool.
+    The tool is executed server-side by Anthropic — the client only needs to
+    acknowledge tool_use turns with empty tool_result content so Claude can
+    continue to its final answer.
     """
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-
-    prior_pred_context = ""
-    if last_preds:
-        prior_pred_context = f"""
-PREVIOUS DAY'S PREDICTIONS (from {last_preds.get('date', 'prior day')}):
-- S&P 500 Direction Prediction: {last_preds.get('sp500_direction', 'N/A')}
-- Stock Picks: {', '.join(last_preds.get('stock_picks', []))}
-
-Compare these predictions against what actually happened today and grade them (accurate / partially accurate / inaccurate) with brief notes.
-"""
-    else:
-        prior_pred_context = "This is the FIRST edition — no prior predictions to review. Note that briefly."
-
-    system_prompt = """You are a professional financial analyst producing a daily stock market briefing email.
-Use the web_search tool to gather fresh, real-time data for today's market close.
-Be specific with numbers (index levels, % moves, stock prices). Be concise but data-rich.
-Format your final output as a single JSON object with these keys:
-- "html": complete HTML email body (styled, scannable, use tables/colored cards)
-- "plain": plain text version
-- "predictions": {
-    "sp500_direction": "UP ~X% / DOWN ~X% / FLAT",
-    "sp500_rationale": "1-2 sentence reason",
-    "stock_picks": ["TICK1", "TICK2", "TICK3", "TICK4", "TICK5"],
-    "stock_pick_rationales": {"TICK1": "reason", ...}
-  }
-"""
-
-    user_prompt = f"""Generate the Daily Business + Stock Market Briefing for {today_str}.
-
-{prior_pred_context}
-
-Search for and include ALL of the following:
-
-1. MAJOR INDICES at close: S&P 500, Nasdaq, Dow Jones, Russell 2000 (levels + % change)
-2. KEY MARKET NARRATIVE: What drove today's moves? (2-3 sentences)
-3. SECTOR PERFORMANCE: Which sectors led/lagged?
-4. TOP 5 BUSINESS NEWS STORIES that moved the market (each: headline + 1-2 sentence summary)
-5. NOTABLE STOCK MOVERS: Top gainers, top losers, notable large-cap stories
-6. MID/SMALL CAP MOVERS: Any mid/small cap stocks showing unusual breakout activity
-7. EARNINGS / IPO / M&A highlights from today
-8. 5 STOCKS WORTH WATCHING (with 1-sentence thesis each)
-9. PREVIOUS PREDICTION REVIEW: Grade the prior predictions (see above)
-10. NEXT-DAY PREDICTIONS:
-    - S&P 500 direction for the next trading day (with rationale)
-    - 5 stock picks for near-term gains (can be longs or shorts/puts) with brief rationale each
-
-Format the HTML with a clean, professional dark-header style. Use color-coded index cards (green/red).
-Make it easy to scan in an email client.
-"""
-
-    messages = [{"role": "user", "content": user_prompt}]
-
-    # Agentic loop with web_search tool
-    response = client.messages.create(
-        model="claude-opus-4-8",
-        max_tokens=8192,
-        system=system_prompt,
-        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}],
-        messages=messages,
-    )
-
-    # Process tool use loop
-    while response.stop_reason == "tool_use":
-        tool_results = []
-        for block in response.content:
-            if block.type == "tool_use":
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": block.input.get("query", ""),
-                })
-        messages.append({"role": "assistant", "content": response.content})
-        messages.append({"role": "user", "content": tool_results})
+    for _ in range(20):  # safety cap on turns
         response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=8192,
-            system=system_prompt,
-            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}],
+            model=MODEL,
+            max_tokens=16000,
+            system=system,
+            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 10}],
             messages=messages,
         )
 
-    # Extract the final text response
-    final_text = ""
-    for block in response.content:
-        if hasattr(block, "text"):
-            final_text += block.text
+        if response.stop_reason == "end_turn":
+            return "".join(
+                block.text for block in response.content if hasattr(block, "text")
+            )
 
-    # Parse the JSON from the response
-    json_match = re.search(r"\{[\s\S]*\}", final_text)
-    if json_match:
-        data = json.loads(json_match.group())
+        if response.stop_reason == "tool_use":
+            # Web search is server-side — Anthropic executes it automatically.
+            # We just acknowledge with empty tool_result content so Claude continues.
+            messages = messages + [
+                {"role": "assistant", "content": response.content},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": "",
+                        }
+                        for block in response.content
+                        if block.type == "tool_use"
+                    ],
+                },
+            ]
+        else:
+            # Unexpected stop reason — return whatever text we have
+            return "".join(
+                block.text for block in response.content if hasattr(block, "text")
+            )
+
+    return "Error: exceeded max turns in Claude loop"
+
+
+def generate_briefing(today_str: str, last_preds: dict) -> tuple[str, dict]:
+    """
+    Generate the full HTML briefing and extract next-day predictions.
+    Returns (html_body, predictions_dict).
+    """
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    today = date.today()
+    next_trading_day = today + timedelta(days=1)
+    while next_trading_day.weekday() >= 5:  # skip weekends
+        next_trading_day += timedelta(days=1)
+    next_day_str = next_trading_day.strftime("%B %-d, %Y")
+
+    # Build prior predictions review section
+    if last_preds:
+        picks = last_preds.get("stock_picks", [])
+        if isinstance(picks, list) and picks and isinstance(picks[0], dict):
+            picks_formatted = "\n".join(
+                f"  • {p['ticker']} ({p.get('direction','')}) — {p.get('thesis','')}"
+                for p in picks
+            )
+        else:
+            picks_formatted = str(picks)
+
+        prior_section = f"""
+PREVIOUS DAY'S PREDICTIONS TO GRADE (made on {last_preds.get('date', 'prior day')}):
+  S&P 500 call: {last_preds.get('sp500_direction', 'N/A')}
+  Stock picks:
+{picks_formatted}
+
+Search for what actually happened with each of these today, then grade each prediction
+as CORRECT, INCORRECT, or MIXED with a 1-sentence explanation."""
     else:
-        # Fallback: treat entire response as HTML
-        data = {
-            "html": f"<pre>{final_text}</pre>",
-            "plain": final_text,
-            "predictions": {
-                "sp500_direction": "See email",
-                "stock_picks": [],
-                "stock_pick_rationales": {},
-            },
-        }
+        prior_section = "PREVIOUS PREDICTIONS: This is the first edition — note there are no prior predictions to grade."
 
-    return data["html"], data["plain"], data.get("predictions", {})
+    system_prompt = """You are a professional financial analyst writing a daily after-market briefing email.
+Use web_search to gather real, current data — never guess numbers.
+Output EXACTLY the structure requested: HTML email first, then the prediction JSON block delimited as shown."""
+
+    user_prompt = f"""Write the Daily Business + Stock Market Briefing for {today_str}.
+
+{prior_section}
+
+STEP 1 — Search for all of the following (use multiple searches):
+  • "S&P 500 Nasdaq Dow close {today_str}" — index levels and % changes
+  • "top business news stock market {today_str}" — major stories
+  • "biggest stock gainers losers movers {today_str}" — with reasons
+  • "sector performance {today_str}" — which sectors led/lagged
+  • "earnings IPO merger acquisition {today_str}" — corporate events
+  • Any grading searches needed for the prior predictions above
+
+STEP 2 — Output a complete HTML email body using this structure and inline style guide:
+
+<html><body style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;max-width:720px;margin:0 auto;background:#f5f5f5;">
+<div style="background:#fff;padding:28px 32px;border-radius:8px;">
+
+  <!-- HEADER -->
+  <h1 style="font-size:22px;color:#0a2540;border-bottom:3px solid #0062ff;padding-bottom:10px;">
+    Daily Business + Stock Briefing — {today_str}
+  </h1>
+
+  <!-- SECTION 1: MARKET OVERVIEW -->
+  <!-- Table showing S&P 500, Nasdaq, Dow, Russell 2000: level, % change (green/red), brief driver note -->
+
+  <!-- SECTION 2: SECTOR PERFORMANCE -->
+  <!-- Colored chips for each sector with % change -->
+
+  <!-- SECTION 3: KEY MARKET NARRATIVE -->
+  <!-- 2-3 sentences on what drove today's moves -->
+
+  <!-- SECTION 4: TOP BUSINESS NEWS (4-6 stories) -->
+  <!-- Each: category tag (TECH/MACRO/M&A/HEALTH/etc), bold headline, 1-2 sentence summary -->
+
+  <!-- SECTION 5: EARNINGS / IPO / M&A -->
+  <!-- Notable corporate events from today -->
+
+  <!-- SECTION 6: 5 NOTABLE STOCK MOVERS -->
+  <!-- Cards: ticker, company, % move (colored), 1-sentence reason -->
+  <!-- Include both large caps and any notable mid/small caps showing breakout activity -->
+
+  <!-- SECTION 7: PREVIOUS PREDICTION REVIEW -->
+  <!-- Grade prior predictions, or note it's the first edition -->
+
+  <!-- SECTION 8: TOMORROW'S PREDICTIONS ({next_day_str}) -->
+  <!-- S&P 500 direction call with rationale -->
+  <!-- 5 stock picks: ticker, LONG/SHORT, 1-sentence thesis -->
+
+  <p style="font-size:11px;color:#888;border-top:1px solid #eee;padding-top:12px;">
+    Disclaimer: For informational purposes only. Not investment advice.
+  </p>
+</div>
+</body></html>
+
+Use green (#0a8a0a bold) for gains, red (#cc0000 bold) for losses.
+Section headers: background #eef3ff, left border 4px solid #0062ff, padding 7px 12px.
+
+STEP 3 — After the HTML, on a new line output EXACTLY this block (no other text after the HTML):
+
+===PREDICTIONS_JSON_START===
+{{
+  "date": "{today.isoformat()}",
+  "sp500_direction": "UP/DOWN/FLAT ~X% — one sentence rationale",
+  "stock_picks": [
+    {{"ticker": "TICK", "direction": "LONG", "thesis": "one sentence"}},
+    {{"ticker": "TICK", "direction": "LONG", "thesis": "one sentence"}},
+    {{"ticker": "TICK", "direction": "SHORT", "thesis": "one sentence"}},
+    {{"ticker": "TICK", "direction": "LONG", "thesis": "one sentence"}},
+    {{"ticker": "TICK", "direction": "LONG", "thesis": "one sentence"}}
+  ]
+}}
+===PREDICTIONS_JSON_END==="""
+
+    raw = call_claude(client, system_prompt, [{"role": "user", "content": user_prompt}])
+
+    # Extract predictions JSON using explicit delimiters
+    pred_match = re.search(
+        r"===PREDICTIONS_JSON_START===\s*(.*?)\s*===PREDICTIONS_JSON_END===",
+        raw,
+        re.DOTALL,
+    )
+    predictions = {}
+    if pred_match:
+        try:
+            predictions = json.loads(pred_match.group(1).strip())
+        except json.JSONDecodeError as e:
+            print(f"Warning: could not parse predictions JSON: {e}")
+            predictions = {"date": today.isoformat(), "sp500_direction": "N/A", "stock_picks": []}
+
+    # HTML is everything before the predictions block
+    html_body = raw.split("===PREDICTIONS_JSON_START===")[0].strip()
+
+    # Ensure it looks like HTML — wrap if needed
+    if not (html_body.lstrip().startswith("<!") or html_body.lstrip().startswith("<html")):
+        html_body = f"<html><body style='font-family:Arial,sans-serif;'>{html_body}</body></html>"
+
+    return html_body, predictions
 
 
-def send_email(subject: str, html_body: str, plain_body: str):
+# ---------------------------------------------------------------------------
+# Email sending
+# ---------------------------------------------------------------------------
+
+def send_email(subject: str, html_body: str):
+    plain = "Please open this email in an HTML-capable client to view the briefing."
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = SENDER_EMAIL
     msg["To"] = RECIPIENT_EMAIL
-
-    msg.attach(MIMEText(plain_body, "plain"))
+    msg.attach(MIMEText(plain, "plain"))
     msg.attach(MIMEText(html_body, "html"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
         server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
-    print(f"Email sent to {RECIPIENT_EMAIL}")
 
+    print(f"✓ Email sent to {RECIPIENT_EMAIL}")
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 def main():
     today = date.today()
-    today_str = today.strftime("%B %-d, %Y")  # e.g. "June 8, 2026"
+    today_str = today.strftime("%B %-d, %Y")
     subject = f"Daily Business + Stock News [{today_str}]"
 
-    print(f"Generating briefing for {today_str}...")
+    print(f"Generating briefing for {today_str}…")
     last_preds = load_last_predictions()
+    print(f"Prior predictions loaded: {bool(last_preds)}")
 
-    html_body, plain_body, new_preds = generate_briefing(today_str, last_preds)
+    html_body, new_preds = generate_briefing(today_str, last_preds)
 
-    send_email(subject, html_body, plain_body)
+    print("Sending email…")
+    send_email(subject, html_body)
 
-    # Persist today's predictions for tomorrow's grading
-    new_preds["date"] = today_str
-    save_predictions(new_preds)
-    print("Predictions saved for tomorrow's review.")
+    if new_preds:
+        save_predictions(new_preds)
+        print("✓ Predictions saved for tomorrow's review.")
+    else:
+        print("Warning: no predictions parsed — predictions file not updated.")
 
 
 if __name__ == "__main__":
