@@ -95,36 +95,17 @@ Make it easy to scan in an email client.
 
     messages = [{"role": "user", "content": user_prompt}]
 
-    # Agentic loop with web_search tool
+    # web_search_20250305 is a server-side built-in tool — the API executes searches
+    # automatically and returns a complete response in a single call (no manual loop).
     response = client.messages.create(
         model="claude-opus-4-8",
         max_tokens=8192,
         system=system_prompt,
-        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}],
+        tools=[{"type": "web_search_20250305", "name": "web_search"}],
         messages=messages,
     )
 
-    # Process tool use loop
-    while response.stop_reason == "tool_use":
-        tool_results = []
-        for block in response.content:
-            if block.type == "tool_use":
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": block.input.get("query", ""),
-                })
-        messages.append({"role": "assistant", "content": response.content})
-        messages.append({"role": "user", "content": tool_results})
-        response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=8192,
-            system=system_prompt,
-            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}],
-            messages=messages,
-        )
-
-    # Extract the final text response
+    # Extract the final text response (server-side tool; stop_reason will be end_turn)
     final_text = ""
     for block in response.content:
         if hasattr(block, "text"):

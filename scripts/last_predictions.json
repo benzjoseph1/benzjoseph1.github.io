@@ -1,6 +1,13 @@
 {
-  "sp500_direction": "See email",
-  "stock_picks": [],
-  "stock_pick_rationales": {},
-  "date": "June 10, 2026"
+  "date": "June 11, 2026",
+  "sp500_direction": "UP ~0.5% to +1.0% — SpaceX IPO euphoria + continued Iran deal optimism, tempered by 63% Fed hike odds from CPI shock",
+  "sp500_rationale": "SpaceX SPCX IPO opens June 12 with massive retail demand; Iran peace optimism carries over; but May CPI at 4.2% and Fed hike odds at 63% cap upside. Watch oil: Hormuz risk remains even with deal in progress.",
+  "stock_picks": ["SPCX", "MU", "ORCL", "XLE", "CASY"],
+  "stock_pick_rationales": {
+    "SPCX": "BUY — Historic IPO opens June 12. 30% retail allocation via Fidelity. Expect 15-25% first-day pop on $1.75T valuation. Trade the open.",
+    "MU": "BUY — AI HBM momentum intact; revenue forecast $8.5B (2025) → $67B (2026). Chip rebound continuing on Iran relief.",
+    "ORCL": "BUY (contrarian) — -12% drop is overreaction to strong fundamentals. $638B backlog, 21% revenue growth. Bounce expected as capex fears cool.",
+    "XLE": "BUY — Oil elevated on Strait of Hormuz risk. Even a signed Iran deal won't normalize supply overnight. Energy sector catch-up play.",
+    "CASY": "BUY — Post-earnings momentum from 32% EPS beat. $1B buyback provides floor support. Fuel margin expansion story intact."
+  }
 }

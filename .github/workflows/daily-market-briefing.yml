@@ -1,8 +1,8 @@
 name: Daily Market Briefing
 
 on:
-  # 4pm PST = 23:00 UTC (during PDT/summer, UTC-7)
-  # Runs Mon-Fri at market close
+  # 4pm PDT (summer, UTC-7) = 23:00 UTC
+  # In winter (PST, UTC-8) this fires at 3pm — update to "0 0 * * 2-6" Nov-Mar
   schedule:
     - cron: "0 23 * * 1-5"
 
