@@ -1,18 +1,20 @@
 name: Daily Market Briefing
 
 on:
-  # 4pm PST = 23:00 UTC (during PDT/summer, UTC-7)
-  # Runs Mon-Fri at market close
+  # 4pm PST (UTC-8) = 00:00 UTC the next calendar day
+  # 4pm PDT (UTC-7) = 23:00 UTC the same calendar day
+  # Running at both times covers daylight-saving transitions year-round.
   schedule:
-    - cron: "0 23 * * 1-5"
+    - cron: "0 0 * * 2-6"   # 4pm PST (winter: UTC-8) — fires Tue–Sat UTC = Mon–Fri PST
+    - cron: "0 23 * * 1-5"  # 4pm PDT (summer: UTC-7) — fires Mon–Fri
 
-  # Allow manual trigger from GitHub Actions tab
+  # Allow manual trigger from the GitHub Actions tab for ad-hoc runs
   workflow_dispatch:
 
 jobs:
   send-briefing:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -24,7 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install anthropic
+        run: pip install -r scripts/requirements.txt
 
       - name: Run market briefing
         env:

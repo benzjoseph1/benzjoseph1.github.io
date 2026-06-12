@@ -1,6 +1,13 @@
 {
-  "sp500_direction": "See email",
-  "stock_picks": [],
-  "stock_pick_rationales": {},
-  "date": "June 10, 2026"
+  "date": "June 12, 2026",
+  "sp500_direction": "UP ~0.3% to +0.8% — slight upward bias",
+  "sp500_rationale": "SpaceX post-IPO momentum, improving consumer sentiment (48.9 vs 44.8 prior low), and falling oil prices on Iran deal optimism are bullish tailwinds. Key risk: Iran deal collapse over the weekend would reverse energy gains and pressure broad equities.",
+  "stock_picks": ["MRVL", "DAL", "FLEX", "WBD", "SPCX"],
+  "stock_pick_rationales": {
+    "MRVL": "Marvell Technology joins S&P 500 on June 22 — index fund forced-buy deadline creates mechanical demand; AI chip exposure adds fundamental support.",
+    "DAL": "Delta Air Lines has highest leverage to oil costs in consumer-facing sectors; Iran deal / Hormuz reopening = sharp jet fuel cost drop = major margin expansion.",
+    "FLEX": "Flex Ltd also joins S&P 500 on June 22 alongside MRVL — same forced-buy catalyst, less covered and possibly more efficiently priced opportunity.",
+    "WBD": "Warner Bros. Discovery up 2.4% today with Communication Services as 3rd-best sector; streaming and CTV ad spend recovery is a structural tailwind.",
+    "SPCX": "SpaceX closed first IPO day at $161 (+19%) with strong institutional demand signal. If it holds above $155 on Monday open, momentum likely continues into the week."
+  }
 }
