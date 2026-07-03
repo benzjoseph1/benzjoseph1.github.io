@@ -1,31 +1,31 @@
 {
-  "date": "2026-06-09",
-  "sp500_direction": "UP +1.0% to +1.8% if May CPI \u2264 3.5% YoY / DOWN -1.2% to -2.0% if CPI \u2265 3.9% \u2014 Wednesday's 8:30 AM ET CPI print is the sole dominant catalyst with Fed rate-hike odds at 72%, making this a binary-outcome day for equities.",
+  "date": "2026-07-03",
+  "sp500_direction": "UP +0.2% to +0.6% for Monday, July 6, 2026 \u2014 a weak June jobs report (57K vs ~110-115K est.) lifted Fed-hold/cut odds and broadened the rally into defensives, while an AI-capex-ROI scare keeps chip names as the main downside risk.",
   "stock_picks": [
     {
-      "ticker": "ORCL",
+      "ticker": "TSLA",
       "direction": "LONG",
-      "thesis": "Oracle reports earnings Wednesday evening; AI infrastructure sentiment is running hot and a cloud/AI revenue beat could trigger a gap-up as the market looks for the next post-Broadcom data center spending confirmation."
+      "thesis": "Fell 7.49% on a sell-the-news reaction to record Q2 deliveries (480,126, +25% YoY) rather than a fundamental miss, setting up an oversold dead-cat-bounce into the July 22 earnings run-up."
     },
     {
-      "ticker": "MRVL",
+      "ticker": "MU",
       "direction": "LONG",
-      "thesis": "With S&P 500 inclusion effective June 22, passive index funds must mechanically accumulate MRVL shares over the next two weeks, making every pullback a high-probability buying opportunity driven by forced demand."
+      "thesis": "The 8.2% pullback after tripling this year looks like profit-taking on a still-intact AI/HBM demand thesis, not a break in the story."
+    },
+    {
+      "ticker": "KLAC",
+      "direction": "SHORT",
+      "thesis": "Chip-equipment names are at the center of the AI-capex-ROI worry (Citi note questioning hyperscaler spend returns, Meta reportedly leasing out spare compute) with no clear near-term catalyst to reverse the slide."
+    },
+    {
+      "ticker": "GOOGL",
+      "direction": "LONG",
+      "thesis": "Joined the Dow June 29 replacing Verizon; mechanical index-fund buying from the inclusion should provide a multi-day tailwind similar to past index-addition trades."
     },
     {
       "ticker": "TLT",
       "direction": "LONG",
-      "thesis": "A CPI print at or below consensus 3.5% would trigger a sharp relief rally in long-duration Treasuries as rate-hike expectations compress rapidly, offering asymmetric upside for TLT holders going into the print."
-    },
-    {
-      "ticker": "SOXX",
-      "direction": "LONG",
-      "thesis": "The semiconductor sector's structural AI tailwind remains intact with 61% quarterly outperformance vs. the S&P 500, and two volatile days of selling have created an attractive re-entry point for a CPI-driven bounce in the SOXX ETF."
-    },
-    {
-      "ticker": "XLE",
-      "direction": "SHORT",
-      "thesis": "Iran's stated end to its military operation against Israel and Trump's diplomatic optimism signal a potential unwinding of the geopolitical oil risk premium, making the energy ETF a short candidate as crude prices normalize toward pre-escalation levels."
+      "thesis": "A weak payrolls report and rising Fed-hold/cut odds should keep downward pressure on yields, supporting long-duration Treasuries."
     }
   ]
 }
